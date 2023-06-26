@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-db
+  namespace: flask-app
+spec:
+  selector:
+    matchLabels:
+      app: mongo-db
+  template:
+    metadata:
+      labels:
+        app: mongo-db
+    spec:
+      containers:
+      - name: mongo-db
+        image: mongo
+        env: 
+        - name: "MONGO_INITDB_ROOT_USERNAME"
+          value: "admin"
+        - name: "MONGO_INITDB_ROOT_PASSWORD"
+          value: "dbgudwn1!"
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "100m"
+        ports:
+        - name: mongo
+          containerPort: 27017
+        volumeMounts: 
+          - name: mongo-db-storage
+            mountPath: /data/db
+      volumes:
+      - name: mongo-db-storage
+        hostPath:
+          path: /home/youhyeongju/mongodb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-db
+  namespace: flask-app 
+spec:
+  selector:
+    app: mongo-db
+  ports:
+  - port: 27017
+    targetPort: 27017

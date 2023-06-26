@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  manual-flask-app
+  namespace: manual-flask-app
+  labels:
+    app:  manual-flask-app
+spec:
+  selector:
+    matchLabels:
+      app: manual-flask-app
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app:  manual-flask-app
+    spec:
+      # initContainers:
+        # Init containers are exactly like regular containers, except:
+          # - Init containers always run to completion.
+          # - Each init container must complete successfully before the next one starts.
+      containers:
+      - name:  manual-flask-app
+        image:  hyeongju123/manual-flask:v5
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 100m
+            memory: 256Mi
+        ports:
+        - containerPort: 5002
+          name:  manual-flaskapp
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: manual-flask-app
+  namespace: manual-flask-app
+spec:
+  selector:
+    app: manual-flask-app
+  ports:
+  - port: 8080
+    targetPort: 5002
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: manual-flask-app-ingress
+  namespace: manual-flask-app
+  labels:
+    name: manual-flask-app-ingress
+  # annotations:
+  #   kubernetes.io/ingress.class: "nginx"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: manual-flask-app.hjyoo.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: manual-flask-app
+            port: 
+              number: 8080

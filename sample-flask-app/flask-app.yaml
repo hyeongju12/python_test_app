@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  flask-app
+  namespace: flask-app
+  labels:
+    app:  flask-app
+spec:
+  selector:
+    matchLabels:
+      app: flask-app
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app:  flask-app
+    spec:
+      # initContainers:
+        # Init containers are exactly like regular containers, except:
+          # - Init containers always run to completion.
+          # - Each init container must complete successfully before the next one starts.
+      containers:
+      - name:  flask-app
+        image:  hyeongju123/flask-app:v7
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 100m
+            memory: 256Mi
+        env:
+        - name: "OTEL_EXPORTER_OTLP_ENDPOINT"
+          value: "http://signoz-otel-collector.signoz.svc.cluster.local:4317"
+        # - name: "OTEL_TRACES_EXPORTER"
+        #   value: "otlp, console"
+        # - name: "OTEL_METRICS_EXPORTER"
+        #   value: "otlp"
+        # - name: "OTEL_PYTHON_LOG_CORRELATION"
+        #   value: "true"
+        # - name: "OTEL_PYTHON_LOG_LEVEL"
+        #   value: "debug"
+        ports:
+        - containerPort: 5002
+          name:  flask-app
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-app
+  namespace: flask-app
+spec:
+  selector:
+    app: flask-app
+  ports:
+  - port: 8080
+    targetPort: 5002
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: flask-app-ingress
+  namespace: flask-app
+  labels:
+    name: flask-app-ingress
+  # annotations:
+  #   kubernetes.io/ingress.class: "nginx"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: flask-app.hjyoo.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: flask-app
+            port: 
+              number: 8080
